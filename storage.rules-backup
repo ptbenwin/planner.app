@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // PT Benwin Indonesia corporate documents
+    match /pt-benwin/{department}/{userId}/{fileName} {
+      // Allow authenticated users with @benwinindonesia.com emails
+      allow read, write: if request.auth != null 
+                         && request.auth.uid == userId
+                         && request.auth.token.email.matches('.*@benwinindonesia\\.com$')
+                         && request.auth.token.email_verified == true;
+    }
+    
+    // Allow users to read files from their own department
+    match /pt-benwin/{department}/{allPaths=**} {
+      allow read: if request.auth != null 
+                  && request.auth.token.email.matches('.*@benwinindonesia\\.com$')
+                  && request.auth.token.email_verified == true;
+    }
+    
+    // Deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
